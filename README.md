@@ -23,6 +23,12 @@ java -jar BlockuDokuBot.jar {img file path}
 ```
 Replace `{img file path}` with the path to your game screenshot.
 
+You can run this command with preset images
+Here is an example of such a use:
+```bash
+java -jar .\Blocku-Doku-Bot.jar .\Server\Server_Img\20240424235322.png
+```
+
 ## Dependencies
 For the Python server-client:
 - Flask
