@@ -19,7 +19,7 @@ To use the Blocku Doku Bot, follow these steps:
 ## Usage
 Run the bot with the following command:
 ```bash
-java -jar BlockuDokuBot.jar {img file path}
+java .\BlockuDokuBot.jar .\Server\Server_Img\{test image}.png
 ```
 Replace `{img file path}` with the path to your game screenshot.
 
