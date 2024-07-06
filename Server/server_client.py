@@ -49,4 +49,4 @@ def upload_image():
     return jsonify({"message": "Image successfully uploaded and processed", "filename": filename, "coordinates": coordinates}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='194.146.4.99', port=5000)
