@@ -1,4 +1,6 @@
+import zlib
 from flask import Flask, request, jsonify
+
 import os
 import subprocess  # Import the subprocess module
 from datetime import datetime
@@ -20,12 +22,13 @@ def upload_image():
 
     # Save the incoming image data to a file
     with open(filepath, 'wb') as f:
-        f.write(request.data)
+        request.data = request.data
+        f.write(zlib.decompress(request.data))
         #print(f"Saving image {filename}")
 
     try:
         # Execute the Java command and capture the output
-        command = f"java -jar .\\BlokuDoku.jar {filepath}"
+        command = f"java -jar .\\Blocku-Doku-Bot.jar {filepath}"
         result = subprocess.run(command, shell=True, capture_output=True, text=True, check=True)
         output = result.stdout.strip()
         #print(f"Executed command: {command}")

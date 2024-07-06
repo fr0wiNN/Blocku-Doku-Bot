@@ -4,15 +4,18 @@ public class BlockFactory {
     public BlockFactory(){
          
     }
+    public static boolean printMode = true;
 
     public Block[] createBlocks(){
         Block[] blocks = new Block[3];
         blocks[0] = new Block();
         blocks[1] = new Block();
         blocks[2] = new Block();
-        blocks[0].printBlock();
-        blocks[1].printBlock();
-        blocks[2].printBlock();
+        if(printMode){
+            blocks[0].printBlock();
+            blocks[1].printBlock();
+            blocks[2].printBlock();
+        }
         return blocks;
     }
 
@@ -28,9 +31,11 @@ public class BlockFactory {
         blocks[0] = new Block(x);
         blocks[1] = new Block(y);
         blocks[2] = new Block(z);
-        blocks[0].printBlock();
-        blocks[1].printBlock();
-        blocks[2].printBlock();
+        if (printMode) {
+            blocks[0].printBlock();
+            blocks[1].printBlock();
+            blocks[2].printBlock();   
+        }
         return blocks;
     }
 }

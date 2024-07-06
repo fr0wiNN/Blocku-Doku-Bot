@@ -17,15 +17,17 @@ public class ImageCropper {
     }
 
     private static final int x = 30;
-    private static final int y = 1720;
+    private static final int y = 1720+83+43;
     private static final int width = 340*3;
     private static final int height = 340;
     private static final int blockWidth = width/3;
 
     private static final int boardX = 46;
-    private static final int boardY = 596;
-    private static final int boardWidth = 1033-boardX;
-    private static final int boardHeight = 1583-boardY;
+    private static final int boardY = 596+83;
+    //private static final int boardWidth = 1033-boardX;//437
+    private static final int boardWidth = 987;//437
+    //private static final int boardHeight = 1583-boardY;
+    private static final int boardHeight = 987;
 
 
     /**

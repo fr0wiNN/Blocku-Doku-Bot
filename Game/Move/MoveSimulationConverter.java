@@ -15,13 +15,14 @@ public class MoveSimulationConverter {
     private static void printStartLocation(int index){
         switch (index) {
             case 0:
-                System.out.print("210 1887 ");
+                //System.out.print("210 1887 "); -83
+                System.out.print("210 "+ (1887 + 83 + 43) +" ");
                 break;
             case 1:
-                System.out.print("540 1887 ");
+                System.out.print("540 "+ (1887 + 83 + 43) +" ");
                 break;
             case 2:
-                System.out.print("870 1887 ");
+                System.out.print("870 "+ (1887 + 83 + 43) +" ");
                 break;
         }
     }
@@ -41,6 +42,6 @@ public class MoveSimulationConverter {
     }
 
     private static int centerY(int blockHeight){
-        return yOffset + (blockHeight*110) + ((5*110 - blockHeight*110)/2);
+        return yOffset + (blockHeight*110) + ((5*110 - blockHeight*110)/2) + 83;
     }
 }

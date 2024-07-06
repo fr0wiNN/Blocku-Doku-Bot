@@ -3,7 +3,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import Game.Block.Block;
@@ -13,22 +15,51 @@ import Game.Move.OnePlacementInstruction;
 import Game.Move.SetOfMoves;
 
 public class Game {
+    private static boolean printMode = true;
     private Board gameBoard;
     private UI window;
     private double fitnessScore;
+    private int simulationGameScore = 0;
+    private int currentCombo = 0;
     private List<SetOfMoves> allPossibleMoves;
-    private static Board initialBoard;
-    private static Board firstCheckpoint;
-    private static Board secondCheckpoint;
     private BoardEvaluator boardEvaluator = new BoardEvaluator();
+    private Chromosome chromosome;
 
     //TODO WARZONE
-    public static int simulateGame(Chromosome chromosome){
-        while(true){
-            Game game = new Game();
+    public static int getGameScore(Chromosome givenChromosome){
+        Game game = new Game();
+        game.chromosome = givenChromosome;
+        game.printMode = false;
+        game.simulationGameScore = 0;
+        game.currentCombo = 0;
+        game.allPossibleMoves.clear();
+
+        do{
             BlockFactory factory = new BlockFactory();
+            factory.printMode = false;
             Block[] blocks = factory.createBlocks();
-            return 0;
+            game.simulateMoves(blocks);
+            placeBlocks(game, game.allPossibleMoves);
+        }while(game.allPossibleMoves.size() != 0);
+
+        return game.simulationGameScore;
+    }
+
+    private static void placeBlocks(Game game, List<SetOfMoves> allPossibleMoves2) {
+        Optional<SetOfMoves> bestMoves = allPossibleMoves2.stream()
+                .max((move1, move2) -> Double.compare(move1.getScore(), move2.getScore()));
+
+        if (bestMoves.isPresent()) {
+            SetOfMoves best = bestMoves.get();
+
+            List<OnePlacementInstruction> moveList = best.getPlacements();
+            for (OnePlacementInstruction a : moveList) {
+                game.placeBlock(a.x, a.y, a.block, game.getBoard());
+                game.simulationGameScore += game.simulateDestruction(game.getBoard() , a.block , a.x , a.y);
+            }
+
+        } else {
+            return;
         }
     }
 
@@ -40,8 +71,8 @@ public class Game {
 
     public void setBoard(Board newBoard) {
         this.gameBoard = newBoard;
-        initialBoard = gameBoard;
-        gameBoard.print();
+        if(printMode)
+            gameBoard.print();
         //updateUI();
     }
 
@@ -70,11 +101,12 @@ public class Game {
                 if (gameBoard.fits(x, y, currentBlock)) {
                     // Place the block and evaluate the score after potential destruction
                     placeBlock(x, y, currentBlock, gameBoard);
-                    simulateDestruction(gameBoard); // This will modify the gameBoard according to destruction rules
+
+                    simulateDestruction(gameBoard,currentBlock,x,y); // This will modify the gameBoard according to destruction rules
 
                     // Recurse with the new board state
                     List<OnePlacementInstruction> newPlacements = new ArrayList<>(placements);
-                    newPlacements.add(new OnePlacementInstruction(x, y, index, currentBlock));
+                    newPlacements.add(new OnePlacementInstruction(x, y, blockIndexMap.get(currentBlock), currentBlock));
                     simulateMoves(blocks, index + 1, newPlacements);
 
                     // Restore the board to its state before the block was placed
@@ -109,7 +141,12 @@ public class Game {
 
     private double evaluateFitnessScore() {
         boardEvaluator.setBoard(gameBoard);
-        boardEvaluator.setChromosome(Chromosome.bestChromosome);
+
+        if(chromosome==null)
+            boardEvaluator.setChromosome(Chromosome.bestChromosome);
+        else
+            boardEvaluator.setChromosome(chromosome);
+
         fitnessScore = boardEvaluator.getScore();
         return fitnessScore;
     }
@@ -124,13 +161,18 @@ public class Game {
 
         if (bestMoves.isPresent()) {
             SetOfMoves best = bestMoves.get();
-            System.out.println("Best score: " + best.getScore());
-            System.out.println(best.toString());
-            System.out.println("Movement Instructions: ");
-            System.out.println("XXXXX");
-            best.printInstructions();
+            //System.out.println("Best score: " + best.getScore());
+            //System.out.println(best.toString());
+            if(printMode){
+                System.out.println("Movement Instructions: ");
+                System.out.println(best.toString());
+                System.out.println("XXXXX");
+                best.printInstructions();
+            }
         } else {
-            System.out.println("No valid moves found.");
+            if (printMode) {
+                System.out.println("No valid moves found.");   
+            }
         }
     }
 
@@ -147,11 +189,31 @@ public class Game {
         }
     }
 
+    public static Map<Block, Integer> blockIndexMap; 
+
     public void simulateMoves(Block[] blockPool){
+        allPossibleMoves.clear();
+        //temSimScore = 0;
+        if(printMode)
+            gameBoard.print();
+
         List<Block> blocks = Arrays.asList(blockPool);
+
+        blockIndexMap = mapBlockToOriginalIndex(blocks);
+
         permuteAndSimulate(blocks, 0);
         //System.out.println("Best move:");
         displayBestMoves();
+    }
+
+    private Map<Block, Integer> mapBlockToOriginalIndex(List<Block> blocks) {
+        Map<Block, Integer> blockIndexMap = new HashMap<>();
+        for (int i = 0; i < blocks.size(); i++) {
+            blockIndexMap.put(blocks.get(i), i);
+        }
+        //System.out.println(blockIndexMap.toString());
+        
+        return blockIndexMap;
     }
 
     private Board getBoard(){ return gameBoard;}
@@ -176,8 +238,19 @@ public class Game {
         }
     }
 
-    private void simulateDestruction(Board board) {
+    private int simulateDestruction(Board board, Block placedBlock, int x, int y) {
         boolean[][] clearBoard = new boolean[9][9]; // Default is false, meaning no cell is cleared initially
+        boolean clearedThisTurn = false; // To check if any line was cleared in this turn
+        int scoreToGain = 0;
+    
+        // Initially, add points for the cells of the block that was just placed
+        for (int i = 0; i < placedBlock.getHeight(); i++) {
+            for (int j = 0; j < placedBlock.getWidth(); j++) {
+                if (board.getBoard()[y + i][x + j] != 0) { // Ensure the cell is part of the block
+                    scoreToGain++; // Add points for each cell of the block that is placed
+                }
+            }
+        }
     
         // Check for complete rows and columns
         for (int i = 0; i < 9; i++) {
@@ -194,12 +267,16 @@ public class Game {
             }
     
             if (fullRow) {
-                Arrays.fill(clearBoard[i], true); // Mark entire row for clearance
+                Arrays.fill(clearBoard[i], true);
+                scoreToGain += 18; // 9*2 points for each cleared row
+                clearedThisTurn = true;
             }
             if (fullColumn) {
                 for (int j = 0; j < 9; j++) {
-                    clearBoard[j][i] = true; // Mark entire column for clearance
+                    clearBoard[j][i] = true;
                 }
+                scoreToGain += 18; // 9*2 points for each cleared column
+                clearedThisTurn = true;
             }
         }
     
@@ -209,7 +286,7 @@ public class Game {
                 boolean fullSquare = true;
                 for (int i = row; i < row + 3; i++) {
                     for (int j = col; j < col + 3; j++) {
-                        if (gameBoard.getBoard()[i][j] == 0) {
+                        if (board.getBoard()[i][j] == 0) {
                             fullSquare = false;
                             break;
                         }
@@ -219,21 +296,33 @@ public class Game {
                 if (fullSquare) {
                     for (int i = row; i < row + 3; i++) {
                         for (int j = col; j < col + 3; j++) {
-                            clearBoard[i][j] = true; // Mark cells in 3x3 square for clearance
+                            clearBoard[i][j] = true;
                         }
                     }
+                    scoreToGain += 18; // 9*2 points for each cleared 3x3 square
+                    clearedThisTurn = true;
                 }
             }
+        }
+    
+        // Apply combo score if any row, column, or square was cleared
+        if (clearedThisTurn) {
+            currentCombo++; // Increase combo count
+            scoreToGain += 9 * (currentCombo - 1); // Apply combo score
+        } else {
+            currentCombo = 0; // Reset combo count if no clearing happened
         }
     
         // Clear marked cells
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (clearBoard[i][j]) {
-                    gameBoard.getBoard()[i][j] = 0; // Clear the cell
+                    board.getBoard()[i][j] = 0; // Clear the cell
                 }
             }
         }
-        //sleep(1000);
+    
+        return scoreToGain;
     }
+    
 }

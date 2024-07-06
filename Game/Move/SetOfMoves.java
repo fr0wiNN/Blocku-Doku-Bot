@@ -1,6 +1,8 @@
 package Game.Move;
 
 import java.util.List;
+import java.util.Map;
+import Game.Block.Block;
 
 // SetOfMoves class might look like this:
 public class SetOfMoves {
@@ -24,7 +26,7 @@ public class SetOfMoves {
     // You may want to override toString() for easy debugging
     @Override
     public String toString() {
-        return  "//////////////////////////////////////\n" +
+        return  "\n//////////////////////////////////////\n" +
                 "////////// MOVES TO PERFORM //////////\n" +
                 "//////////////////////////////////////\n" +
                 " * first placement: \n" + placements.get(0).toString()+ "\n" +
@@ -37,5 +39,6 @@ public class SetOfMoves {
         MoveSimulationConverter.convertToSimulationInstruction(placements.get(0));
         MoveSimulationConverter.convertToSimulationInstruction(placements.get(1));
         MoveSimulationConverter.convertToSimulationInstruction(placements.get(2));
+        System.out.println("");
     }
 }
